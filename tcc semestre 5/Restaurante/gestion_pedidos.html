@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestión de Pedidos - Gratitude</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/toast.css">
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  />
+</head>
+<body class="gestion-pedidos">
+  <nav class="navbar navbar-expand-lg fixed-top" style="background-color: rgb(14, 123, 22)">
+    <div class="container-fluid text-white">
+      <a class="navbar-brand d-flex align-items-center text-white" href="index.html">
+        <img src="images/logo gratitude.jpg" alt="Logo Gratitude" class="me-2" style="height: 40px; width: 40px; border-radius: 50%;">
+        <div>
+          <div style="font-weight: 700">Gratitude</div>
+          <small style="opacity: 0.9">Gestión de Pedidos</small>
+        </div>
+      </a>
+      <div class="d-flex align-items-center">
+        <button id="loginBtn" class="btn btn-outline-light btn-role" data-bs-toggle="modal" data-bs-target="#loginModal" data-redirect="gestion_pedidos.html"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</button>
+        <button id="logoutBtn" class="btn btn-outline-light btn-role" style="display: none;" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
+      </div>
+    </div>
+  </nav>
+  <main>
+    <h1><i class="bi bi-list-check"></i> Pedidos Activos</h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div></div>
+      <button id="createOrderBtn" class="btn btn-success" onclick="openCreateOrderModal()" style="display: none;"><i class="bi bi-plus-circle"></i> Crear Pedido</button>
+    </div>
+
+    <section class="filter-section">
+      <select id="filterStatus" class="form-select form-select-sm">
+        <option value="todos">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="en_preparacion">En preparación</option>
+        <option value="listo">Listo para recoger/entregar</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+
+      <input type="time" id="filterTime" class="form-control form-control-sm" />
+
+      <select id="filterType" class="form-select form-select-sm">
+        <option value="todos">Todos los tipos</option>
+        <option value="recogida">Recogida</option>
+        <option value="mesa">Mesa</option>
+      </select>
+
+      <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Buscar por cliente o ID" style="max-width: 250px;" />
+    </section>
+
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th>ID Pedido</th>
+            <th>Cliente</th>
+            <th>Hora Recogida/Entrega</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTableBody">
+          <!-- Pedidos generados por JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Crear/Editar Pedido -->
+    <div class="modal fade" id="orderModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="orderModalTitle">Crear Pedido</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="orderForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label" data-icon="user">Cliente</label>
+                  <input type="text" class="form-control" id="orderCliente" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" data-icon="clock">Hora</label>
+                  <input type="time" class="form-control" id="orderHora" required>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <label class="form-label" data-icon="type">Tipo</label>
+                  <select class="form-select" id="orderTipo" required>
+                    <option value="recogida">Recogida</option>
+                    <option value="mesa">Mesa</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" data-icon="status">Estado</label>
+                  <select class="form-select" id="orderEstado" required>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_preparacion">En preparación</option>
+                    <option value="listo">Listo</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mt-3">
+                <label class="form-label" data-icon="items">Artículos</label>
+                <div id="orderItemsContainer">
+                  <div class="order-item-input d-flex gap-2 mb-2">
+                    <input type="text" class="form-control" placeholder="Nombre del artículo" required>
+                    <input type="number" class="form-control" placeholder="Cantidad" min="1" required>
+                    <input type="text" class="form-control" placeholder="Notas (opcional)">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">X</button>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addItem()">Agregar Artículo</button>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="saveOrderBtn">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section id="orderDetailsSection" class="order-details" style="display:none;">
+      <h2><i class="bi bi-file-earmark-text"></i> Detalles del Pedido</h2>
+      <div id="orderDetailsContent">
+        <!-- Detalles generados por JS -->
+      </div>
+      <button id="closeDetailsBtn" class="btn btn-secondary mt-3"><i class="bi bi-x-circle"></i> Cerrar detalles</button>
+    </section>
+  </main>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/login.js"></script>
+  <script src="js/script.js"></script>
+
+  <!-- MODAL: LOGIN (simulado) -->
+  <div class="modal fade" id="loginModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Iniciar sesión</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm">
+            <div class="mb-2">
+              <label class="form-label">Correo electrónico</label>
+              <input
+                id="loginEmail"
+                type="email"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Contraseña</label>
+              <input
+                id="loginPassword"
+                type="password"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="d-grid">
+              <button
+                type="submit"
+                class="btn"
+                style="background: var(--verde-medio); color: white"
+              >
+                Entrar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let currentRole = null; // Se resetea desde localStorage
+    let filteredOrders = [];
+    let selectedOrderId = null;
+    let editingOrderId = null;
+
+    const ordersTableBody = document.getElementById("ordersTableBody");
+    const orderDetailsSection = document.getElementById("orderDetailsSection");
+    const orderDetailsContent = document.getElementById("orderDetailsContent");
+    const closeDetailsBtn = document.getElementById("closeDetailsBtn");
+    const filterStatus = document.getElementById("filterStatus");
+    const filterTime = document.getElementById("filterTime");
+    const filterType = document.getElementById("filterType");
+    const searchInput = document.getElementById("searchInput");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const createOrderBtn = document.getElementById("createOrderBtn");
+    const orderModal = new bootstrap.Modal(document.getElementById("orderModal"));
+    const orderModalTitle = document.getElementById("orderModalTitle");
+    const saveOrderBtn = document.getElementById("saveOrderBtn");
+
+    function renderOrders() {
+      ordersTableBody.innerHTML = "";
+      filteredOrders.forEach(order => {
+        const tr = document.createElement("tr");
+
+        const statusClass = {
+          pendiente: "status-pendiente",
+          en_preparacion: "status-preparacion",
+          listo: "status-listo",
+          cancelado: "status-cancelado"
+        }[order.estado] || "";
+
+        let actions = `<button class="btn btn-sm btn-primary" onclick="viewOrderDetails(${order.id})"><i class="bi bi-eye"></i> Ver Detalles</button>`;
+
+        if (canChangeStatus(order.estado, order.estado === "pendiente" ? "en_preparacion" : order.estado === "en_preparacion" ? "listo" : null)) {
+          actions += ` <button class="btn btn-sm btn-success" onclick="advanceStatus(${order.id})"><i class="bi bi-arrow-right-circle"></i> Actualizar Estado</button>`;
+        }
+
+        if (canEditOrder(order.id)) {
+          actions += ` <button class="btn btn-sm btn-warning" onclick="openEditOrderModal(${order.id})"><i class="bi bi-pencil"></i> Editar</button>`;
+        }
+
+        if (canDeleteOrder(order.id)) {
+          actions += ` <button class="btn btn-sm btn-danger" onclick="deleteOrder(${order.id})"><i class="bi bi-trash"></i> Eliminar</button>`;
+        }
+
+        tr.innerHTML = `
+          <td>${order.id}</td>
+          <td>${order.cliente}</td>
+          <td>${order.hora}</td>
+          <td><span class="status-badge ${statusClass}"><i class="bi ${order.estado === 'pendiente' ? 'bi-clock' : order.estado === 'en_preparacion' ? 'bi-gear' : order.estado === 'listo' ? 'bi-check-circle' : 'bi-x-circle'}"></i> ${order.estado.replace(/_/g, " ")}</span></td>
+          <td>${actions}</td>
+        `;
+        ordersTableBody.appendChild(tr);
+      });
+    }
+
+
+
+    function advanceStatus(orderId) {
+      try {
+        const currentOrder = window.getOrderById(orderId);
+        const newEstado = currentOrder.estado === "pendiente" ? "en_preparacion" : "listo";
+        const order = window.updateOrder(orderId, { estado: newEstado });
+        applyFilters(); // Reaplicar filtros después de actualizar estado
+        if (selectedOrderId === orderId) viewOrderDetails(orderId);
+        showToast(`Estado del pedido ${orderId} actualizado a ${order.estado.replace(/_/g, " ")}`, "success");
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+
+    function openCreateOrderModal() {
+      if (!window.canCreateOrder()) {
+        showToast("No tienes permisos para crear pedidos", "error");
+        return;
+      }
+      editingOrderId = null;
+      orderModalTitle.textContent = "Crear Pedido";
+      document.getElementById("orderForm").reset();
+      document.getElementById("orderItemsContainer").innerHTML = `
+        <div class="order-item-input d-flex gap-2 mb-2">
+          <input type="text" class="form-control" placeholder="Nombre del artículo" required>
+          <input type="number" class="form-control" placeholder="Cantidad" min="1" required>
+          <input type="text" class="form-control" placeholder="Notas (opcional)">
+          <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">X</button>
+        </div>
+      `;
+      orderModal.show();
+    }
+
+    function openEditOrderModal(orderId) {
+      if (!window.canEditOrder(orderId)) {
+        showToast("No tienes permisos para editar pedidos", "error");
+        return;
+      }
+      const order = window.getOrderById(orderId);
+      if (!order) {
+        showToast("Pedido no encontrado", "error");
+        return;
+      }
+      editingOrderId = orderId;
+      orderModalTitle.textContent = "Editar Pedido";
+      document.getElementById("orderCliente").value = order.cliente;
+      document.getElementById("orderHora").value = order.hora;
+      document.getElementById("orderTipo").value = order.tipo;
+      document.getElementById("orderEstado").value = order.estado;
+      document.getElementById("orderItemsContainer").innerHTML = "";
+      order.items.forEach(item => {
+        addItem(item.nombre, item.cantidad, item.notas);
+      });
+      orderModal.show();
+    }
+
+    function addItem(nombre = "", cantidad = 1, notas = "") {
+      const container = document.getElementById("orderItemsContainer");
+      const div = document.createElement("div");
+      div.className = "order-item-input d-flex gap-2 mb-2";
+      div.innerHTML = `
+        <input type="text" class="form-control" placeholder="Nombre del artículo" value="${nombre}" required>
+        <input type="number" class="form-control" placeholder="Cantidad" min="1" value="${cantidad}" required>
+        <input type="text" class="form-control" placeholder="Notas (opcional)" value="${notas}">
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(this)">X</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function removeItem(btn) {
+      btn.parentElement.remove();
+    }
+
+    const saveOrder = () => {
+      const cliente = document.getElementById("orderCliente").value.trim();
+      const hora = document.getElementById("orderHora").value;
+      const tipo = document.getElementById("orderTipo").value;
+      const estado = document.getElementById("orderEstado").value;
+      const items = [];
+      document.querySelectorAll(".order-item-input").forEach(div => {
+        const inputs = div.querySelectorAll("input");
+        const nombre = inputs[0].value.trim();
+        const cantidad = parseInt(inputs[1].value);
+        const notas = inputs[2].value.trim();
+        if (nombre && cantidad > 0) {
+          items.push({ nombre, cantidad, notas });
+        }
+      });
+
+      if (!cliente || !hora || items.length === 0) {
+        showToast("Completa todos los campos requeridos", "error");
+        return;
+      }
+
+      try {
+        if (editingOrderId) {
+          window.updateOrder(editingOrderId, { cliente, hora, tipo, estado, items });
+          showToast("Pedido actualizado", "success");
+        } else {
+          window.createOrder({ cliente, hora, tipo, estado, items });
+          showToast("Pedido creado", "success");
+          // Resetear filtros para mostrar todos los pedidos después de crear
+          filterStatus.value = "todos";
+          filterTime.value = "";
+          filterType.value = "todos";
+          searchInput.value = "";
+        }
+        orderModal.hide();
+        applyFilters();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    };
+
+    saveOrderBtn.addEventListener("click", saveOrder);
+
+    // Prevenir submit del formulario y simular guardar
+    document.getElementById("orderForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      saveOrder();
+    });
+
+    function deleteOrder(orderId) {
+      if (!window.canDeleteOrder(orderId)) {
+        showToast("No tienes permisos para eliminar pedidos", "error");
+        return;
+      }
+      if (confirm("¿Estás seguro de eliminar este pedido?")) {
+        try {
+          window.deleteOrder(orderId);
+          showToast("Pedido eliminado", "success");
+          renderOrders();
+        } catch (error) {
+          showToast(error.message, "error");
+        }
+      }
+    }
+
+    function showToast(message, type = "info") {
+      const toastContainer = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <div class="toast-content">
+          <span>${message}</span>
+          <button class="toast-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
+
+    function viewOrderDetails(orderId) {
+      const order = window.getOrderById(orderId);
+      if (!order) {
+        showToast("Pedido no encontrado", "error");
+        return;
+      }
+
+      selectedOrderId = orderId;
+      orderDetailsSection.style.display = "block";
+
+      let html = `
+        <p><strong>ID Pedido:</strong> ${order.id}</p>
+        <p><strong>Cliente:</strong> ${order.cliente}</p>
+        <p><strong>Hora Recogida/Entrega:</strong> ${order.hora}</p>
+        <p><strong>Estado:</strong> ${order.estado.replace(/_/g, " ")}</p>
+        <p><strong>Tipo:</strong> ${order.tipo}</p>
+        <h4>Artículos</h4>
+        <div class="order-items">
+      `;
+
+      order.items.forEach(item => {
+        html += `
+          <div class="order-item">
+            <div>${item.nombre} x ${item.cantidad}</div>
+            <div>${item.notas ? "Notas: " + item.notas : ""}</div>
+          </div>
+        `;
+      });
+
+      html += "</div>";
+      orderDetailsContent.innerHTML = html;
+    }
+
+    closeDetailsBtn.addEventListener("click", () => {
+      orderDetailsSection.style.display = "none";
+      selectedOrderId = null;
+    });
+
+    filterStatus.addEventListener("change", applyFilters);
+    filterTime.addEventListener("change", applyFilters);
+    filterType.addEventListener("change", applyFilters);
+    searchInput.addEventListener("input", applyFilters);
+
+    function applyFilters() {
+      const status = filterStatus.value;
+      const time = filterTime.value;
+      const type = filterType.value;
+      const search = searchInput.value.toLowerCase();
+
+      filteredOrders = window.ACTIVE_ORDERS.filter(order => {
+        let matchesStatus = status === "todos" || order.estado === status;
+        let matchesType = type === "todos" || order.tipo === type;
+        let matchesTime = !time || order.hora === time;
+        let matchesSearch = order.cliente.toLowerCase().includes(search) || order.id.toString().includes(search);
+        return matchesStatus && matchesType && matchesTime && matchesSearch;
+      });
+
+      renderOrders();
+      orderDetailsSection.style.display = "none";
+      selectedOrderId = null;
+    }
+
+    // Inicializar
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedRole = localStorage.getItem("currentUserRole");
+      console.log("Rol guardado:", savedRole);
+      if (!savedRole || (savedRole !== "administrador" && savedRole !== "mesero" && savedRole !== "cocinero")) {
+        console.log("Acceso denegado, mostrando modal de login");
+        // En lugar de redirigir, mostrar modal de login
+        const loginModal = new bootstrap.Modal(document.getElementById("loginModal"));
+        loginModal.show();
+        currentRole = null;
+        // No renderizar pedidos si no hay rol válido
+        return;
+      } else {
+        currentRole = savedRole;
+        console.log("Rol válido:", currentRole);
+        // Ocultar botón de login y mostrar logout si está logueado
+        document.getElementById("loginBtn").style.display = "none";
+        document.getElementById("logoutBtn").style.display = "inline-block";
+        if (savedRole === "administrador" || savedRole === "mesero") {
+          createOrderBtn.style.display = "inline-block";
+          console.log("Botón Crear Pedido mostrado");
+        } else {
+          console.log("Botón Crear Pedido oculto para rol:", savedRole);
+        }
+      }
+      console.log("Pedidos activos:", window.ACTIVE_ORDERS);
+      console.log("Longitud de ACTIVE_ORDERS:", window.ACTIVE_ORDERS ? window.ACTIVE_ORDERS.length : 0);
+      if (window.ACTIVE_ORDERS && window.ACTIVE_ORDERS.length > 0) {
+        filteredOrders = [...window.ACTIVE_ORDERS];
+        console.log("filteredOrders asignado:", filteredOrders.length);
+        renderOrders();
+      } else {
+        console.log("No hay pedidos activos para mostrar");
+      }
+    });
+
+    // Escuchar evento de login exitoso para renderizar pedidos
+    window.addEventListener('loginSuccess', (event) => {
+      const role = event.detail.role;
+      console.log("Login exitoso, rol:", role);
+      currentRole = role;
+      // Ocultar botón de login y mostrar logout
+      document.getElementById("loginBtn").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "inline-block";
+      if (role === "administrador" || role === "mesero") {
+        createOrderBtn.style.display = "inline-block";
+      }
+      // Renderizar pedidos después del login
+      console.log("Pedidos activos después de login:", window.ACTIVE_ORDERS);
+      if (window.ACTIVE_ORDERS && window.ACTIVE_ORDERS.length > 0) {
+        filteredOrders = [...window.ACTIVE_ORDERS];
+        renderOrders();
+      } else {
+        console.log("No hay pedidos activos para mostrar después de login");
+      }
+    });
+  </script>
+</body>
+</html>

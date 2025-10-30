@@ -1,0 +1,22 @@
+/* Animación para toasts */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-container .toast {
+  animation: fadeIn 0.3s ease-in;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 500;
+}
+
+.toast-container .toast-body {
+  font-size: 0.9rem;
+}

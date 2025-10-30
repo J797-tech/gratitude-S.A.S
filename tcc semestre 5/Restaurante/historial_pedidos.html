@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historial de Pedidos - Gratitude</title>
+  <link rel="stylesheet" href="style.css" />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg fixed-top" style="background-color: rgb(14, 123, 22)">
+    <div class="container-fluid text-white">
+      <a class="navbar-brand d-flex align-items-center text-white" href="index.html">
+      <img src="images/logo gratitude.jpg" alt="Logo Gratitude" class="me-2" style="height: 40px; width: 40px; border-radius: 50%;">
+        <div>
+          <div style="font-weight: 700">Gratitude</div>
+          <small style="opacity: 0.9">Historial de Pedidos</small>
+        </div>
+      </a>
+      <div class="d-flex align-items-center">
+        <a href="index.html" class="btn btn-outline-light btn-sm">Volver al Inicio</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HEADER VERDE -->
+  <header class="page-header text-white py-3 position-relative overflow-hidden" style="margin-top: 120px; background-color: rgb(14, 123, 22);">
+    <div class="container position-relative" style="z-index: 2;">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <div class="d-flex align-items-center justify-content-center mb-2">
+            <i class="bi bi-receipt-cutoff me-2" style="font-size: 2rem;"></i>
+            <h1 class="display-5 fw-bold mb-0" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">Historial de Pedidos</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Elementos decorativos -->
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px), radial-gradient(circle at 80% 40%, rgba(255,255,255,0.08) 1.5px, transparent 1.5px), radial-gradient(circle at 60% 80%, rgba(255,255,255,0.06) 1px, transparent 1px), radial-gradient(circle at 40% 60%, rgba(255,255,255,0.08) 1.5px, transparent 1.5px); background-size: 50px 50px;"></div>
+    <div class="position-absolute top-0 end-0 opacity-25" style="width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); transform: translate(50%, -50%);"></div>
+    <div class="position-absolute bottom-0 start-0 opacity-25" style="width: 150px; height: 150px; background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%); transform: translate(-50%, 50%);"></div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <div class="container" style="padding-top: 20px;">
+    <div class="row justify-content-center">
+      <div class="col-lg-12">
+        <div class="card shadow-lg historial-pedidos">
+          <div class="card-body">
+            <section class="filter-section d-flex flex-wrap gap-2 align-items-center">
+              <select id="filterStatus" class="form-select form-select-sm">
+                <option value="todos">Todos los estados</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+              <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Buscar por ID o producto" style="max-width: 250px;" />
+            </section>
+            <div id="ordersContainer">
+              <!-- Pedidos generados por JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Datos de ejemplo de pedidos (simulados)
+    const SAMPLE_ORDERS = [
+      {
+        id: 1001,
+        date: "2024-01-15",
+        time: "14:30",
+        status: "Completado",
+        total: 25.75,
+        pickupTime: "15:00",
+        pickupLocation: "Sucursal Centro",
+        items: [
+          { id: 1, title: "Tarta de fresa (porción)", qty: 2, price: 7.5 },
+          { id: 2, title: "Helado artesano (500ml)", qty: 1, price: 6.0 },
+          { id: 9, title: "Café gourmet (para llevar)", qty: 1, price: 2.8 }
+        ]
+      },
+      {
+        id: 1002,
+        date: "2024-01-10",
+        time: "12:15",
+        status: "Completado",
+        total: 18.25,
+        pickupTime: "12:45",
+        pickupLocation: "Sucursal Centro",
+        items: [
+          { id: 3, title: "Pan campesino (unidad)", qty: 3, price: 2.25 },
+          { id: 5, title: "Macarons (6 unidades)", qty: 1, price: 9.0 },
+          { id: 7, title: "Croissant almendrado", qty: 1, price: 3.5 }
+        ]
+      },
+      {
+        id: 1003,
+        date: "2024-01-08",
+        time: "18:45",
+        status: "Cancelado",
+        total: 12.0,
+        pickupTime: "19:15",
+        pickupLocation: "Sucursal Norte",
+        items: [
+          { id: 4, title: "Box ejecutivo (almuerzo)", qty: 1, price: 12.0 }
+        ]
+      }
+    ];
+
+    let filteredOrders = [...SAMPLE_ORDERS];
+
+    const currency = (v) => "$" + Number(v).toFixed(2);
+
+    function renderOrders() {
+      const container = document.getElementById("ordersContainer");
+      container.innerHTML = "";
+
+      if (filteredOrders.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">No tienes pedidos registrados.</div>';
+        return;
+      }
+
+      filteredOrders.forEach(order => {
+        const statusClass = order.status === "Completado" ? "success" : order.status === "Cancelado" ? "danger" : "warning";
+        const card = document.createElement("div");
+        card.className = "card mb-3";
+        card.innerHTML = `
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><strong>Pedido #${order.id}</strong> - ${order.date} ${order.time}</span>
+            <span class="badge bg-${statusClass}">${order.status}</span>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-8">
+                <h6>Items:</h6>
+                <ul class="list-group list-group-flush">
+                  ${order.items.map(item => `
+                    <li class="list-group-item d-flex justify-content-between">
+                      <span>${item.title} x ${item.qty}</span>
+                      <span>${currency(item.price * item.qty)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+              <div class="col-md-4">
+                <p><strong>Total:</strong> ${currency(order.total)}</p>
+                <p><strong>Recogida:</strong> ${order.pickupTime} en ${order.pickupLocation}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      const status = document.getElementById("filterStatus").value;
+      const search = document.getElementById("searchInput").value.toLowerCase();
+
+      filteredOrders = SAMPLE_ORDERS.filter(order => {
+        let matchesStatus = status === "todos" || order.status.toLowerCase() === status;
+        let matchesSearch = order.id.toString().includes(search) || order.items.some(item => item.title.toLowerCase().includes(search));
+        return matchesStatus && matchesSearch;
+      });
+
+      renderOrders();
+    }
+
+
+
+    function showToast(message, type = "info") {
+      const toastContainer = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <div class="toast-content">
+          <span>${message}</span>
+          <button class="toast-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
+
+    // Verificar autenticación
+    document.addEventListener("DOMContentLoaded", () => {
+      const role = localStorage.getItem("currentUserRole");
+      if (role !== "cliente") {
+        alert("Acceso denegado. Solo para clientes.");
+        window.location.href = "index.html";
+        return;
+      }
+      renderOrders();
+      showToast("Historial actualizado", "info");
+
+      // Event listeners for filters
+      document.getElementById("filterStatus").addEventListener("change", applyFilters);
+      document.getElementById("searchInput").addEventListener("input", applyFilters);
+    });
+  </script>
+</body>
+</html>
